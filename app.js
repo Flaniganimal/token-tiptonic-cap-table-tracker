@@ -935,13 +935,16 @@ function renderProforma() {
     const pfPct = (effectivePct / 100) * tiptonicSlice * 100;
     totalProformaPct += pfPct;
     
+    // Skip rendering Christina & Jack here — they'll be combined with cash investment below
+    if (cjHolder && holder.id === cjHolder.id) {
+      return; // Skip row rendering; pfPct already added to totalProformaPct
+    }
+    
     // Build subtitle
     let subtitle = `Tiptonic Shareholder (${holder.percentage.toFixed(1)}%)`;
     if (state.vestingState === 'vested') {
       if ((benHolder && holder.id === benHolder.id) || (jayHolder && holder.id === jayHolder.id)) {
         subtitle = `Tiptonic Earn-in (Fully Diluted: ${BEN_JAY_VESTED_TARGET.toFixed(0)}% of Tiptonic slice)`;
-      } else if (cjHolder && holder.id === cjHolder.id && totalEarnInDilution > 0) {
-        subtitle = `Tiptonic Shareholder (${effectivePct.toFixed(1)}% after earn-in dilution)`;
       }
     }
     
@@ -958,19 +961,30 @@ function renderProforma() {
     elements.proformaTableBody.appendChild(row);
   });
   
-  // 4. Cash Investment line (goes to Jack & Christina)
+  // 4. Christina & Jack combined: Tiptonic equity + Cash Investment
   const cashPct = newmoneySlice * 100;
   totalProformaPct += cashPct;
+  
+  // Find Christina & Jack's Tiptonic pro forma pct (already counted in totalProformaPct above)
+  let cjTiptonicPct = 0;
+  if (cjHolder) {
+    let cjEffective = cjHolder.percentage;
+    if (state.vestingState === 'vested') {
+      cjEffective = Math.max(0, cjHolder.percentage - totalEarnInDilution);
+    }
+    cjTiptonicPct = (cjEffective / 100) * tiptonicSlice * 100;
+  }
+  const cjTotalPct = cjTiptonicPct + cashPct;
   
   const cashRow = document.createElement('tr');
   cashRow.innerHTML = `
     <td>
       <div style="display: flex; flex-direction: column;">
-        <span class="cell-name">Jack & Christina (Cash Investment)</span>
-        <span class="table-subtitle" style="margin-top: 2px;">New Money Cash Investment Share</span>
+        <span class="cell-name">${cjHolder ? cjHolder.name : 'Christina & Jack'}</span>
+        <span class="table-subtitle" style="margin-top: 2px;">Tiptonic Equity + Cash Investment</span>
       </div>
     </td>
-    <td class="cell-percentage">${formatPercentage(cashPct)}</td>
+    <td class="cell-percentage">${formatPercentage(cjTotalPct)}</td>
   `;
   elements.proformaTableBody.appendChild(cashRow);
   
