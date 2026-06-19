@@ -540,7 +540,7 @@ function editShareholderSource(tableType, holderId) {
   let currentSourceLabel = 'Original shareholder';
   if (undoEntry && undoEntry.source) {
     if (undoEntry.source === 'prorata') {
-      currentSourceLabel = 'All holders (pro rata)';
+      currentSourceLabel = 'Dilute all holders (pro rata)';
     } else {
       const srcHolder = table.find(h => h.id === undoEntry.source);
       currentSourceLabel = srcHolder ? srcHolder.name : 'Specific holder';
@@ -549,7 +549,7 @@ function editShareholderSource(tableType, holderId) {
   elements.editSourceCurrent.innerText = currentSourceLabel;
   
   // Build source dropdown dynamically from OTHER holders in the same table
-  elements.selectEditSource.innerHTML = '<option value="" disabled selected>Select</option><option value="prorata">All holders (pro rata)</option>';
+  elements.selectEditSource.innerHTML = '<option value="" disabled selected>Select</option><option value="prorata">Dilute all holders (pro rata)</option>';
   table.forEach(h => {
     if (h.id !== holderId) {
       elements.selectEditSource.innerHTML += `<option value="${h.id}">Dilute ${h.name} only</option>`;
