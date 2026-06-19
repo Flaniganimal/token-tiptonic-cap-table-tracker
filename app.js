@@ -96,9 +96,10 @@ const elements = {
   editSourceModal: document.getElementById('edit-source-modal'),
   modalCloseEditSource: document.getElementById('modal-close-edit-source'),
   modalCancelEditSource: document.getElementById('modal-cancel-edit-source'),
+  modalDeleteShareholder: document.getElementById('modal-delete-shareholder'),
   formEditSource: document.getElementById('form-edit-source'),
   editSourceHolderName: document.getElementById('edit-source-holder-name'),
-  editSourceTitle: document.getElementById('modal-edit-source-title'),
+  editSourceCurrent: document.getElementById('edit-source-current'),
   selectEditSource: document.getElementById('select-edit-source'),
   
   // Toasts
@@ -214,6 +215,7 @@ function init() {
   elements.modalCloseEditSource.addEventListener('click', closeEditSourceModal);
   elements.modalCancelEditSource.addEventListener('click', closeEditSourceModal);
   elements.formEditSource.addEventListener('submit', handleEditSourceSubmit);
+  elements.modalDeleteShareholder.addEventListener('click', handleDeleteFromModal);
   
   // Load local state cache if exists (fallback to default)
   try {
@@ -451,8 +453,8 @@ function handleAddShareholderSubmit(e) {
     }
   }
   
-  // Push undo snapshot
-  undoStack.push({ addedId: newId, snapshot: snapshot });
+  // Push undo snapshot (include source for display later)
+  undoStack.push({ addedId: newId, snapshot: snapshot, source: source });
   
   // Persist and render
   persistStateLocal();
@@ -525,21 +527,38 @@ function deleteShareholder(tableTarget, id) {
 // Edit Source Modal — Change dilution origin for a shareholder
 function editShareholderSource(tableType, holderId) {
   const table = tableType === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const undoStack = tableType === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
   const holder = table.find(h => h.id === holderId);
   if (!holder) return;
   
   activeEditSourceTarget = { tableType, holderId };
   
-  elements.editSourceTitle.innerText = `Change Source — ${tableType === 'token' ? 'Token' : 'Tiptonic'}`;
-  elements.editSourceHolderName.innerText = `${holder.name} (${holder.percentage.toFixed(1)}%)`;
+  elements.editSourceHolderName.innerText = `${holder.name} — ${holder.percentage.toFixed(1)}%`;
+  
+  // Show current source
+  const undoEntry = undoStack.find(entry => entry.addedId === holderId);
+  let currentSourceLabel = 'Original shareholder';
+  if (undoEntry && undoEntry.source) {
+    if (undoEntry.source === 'prorata') {
+      currentSourceLabel = 'All holders (pro rata)';
+    } else {
+      const srcHolder = table.find(h => h.id === undoEntry.source);
+      currentSourceLabel = srcHolder ? srcHolder.name : 'Specific holder';
+    }
+  }
+  elements.editSourceCurrent.innerText = currentSourceLabel;
   
   // Build source dropdown dynamically from OTHER holders in the same table
-  elements.selectEditSource.innerHTML = '<option value="prorata">All holders (pro rata)</option>';
+  elements.selectEditSource.innerHTML = '<option value="prorata">Select all holders (pro rata)</option>';
   table.forEach(h => {
     if (h.id !== holderId) {
       elements.selectEditSource.innerHTML += `<option value="${h.id}">Dilute ${h.name} only</option>`;
     }
   });
+  
+  // Update delete button label
+  const deleteLabel = tableType === 'token' ? 'Delete - Token' : 'Delete - Tiptonic';
+  elements.modalDeleteShareholder.innerText = deleteLabel;
   
   elements.editSourceModal.classList.add('active');
 }
@@ -627,13 +646,20 @@ function handleEditSourceSubmit(e) {
     }
   }
   
-  // Step 5: Push new undo snapshot
-  undoStack.push({ addedId: holderId, snapshot: newSnapshot });
+  // Step 5: Push new undo snapshot with source
+  undoStack.push({ addedId: holderId, snapshot: newSnapshot, source: newSource });
   
   persistStateLocal();
   closeEditSourceModal();
   render();
   showToast(`Source updated for "${holder.name}".`);
+}
+
+// Handle delete from the edit source modal
+function handleDeleteFromModal() {
+  const { tableType, holderId } = activeEditSourceTarget;
+  closeEditSourceModal();
+  deleteShareholder(tableType, holderId);
 }
 
 // Edit name directly on cell
@@ -801,8 +827,7 @@ function renderPreMergerTable(type) {
           onchange="updateShareholderName('${type}', '${holder.id}', this.value)">
       </td>
       <td class="cell-actions">
-        <button class="btn-edit-link" onclick="editShareholderSource('${type}', '${holder.id}')" title="Change Source">✎</button>
-        <button class="btn-danger-link" onclick="deleteShareholder('${type}', '${holder.id}')" title="Delete Shareholder">🗑</button>
+        <button class="btn-edit-link" onclick="editShareholderSource('${type}', '${holder.id}')" title="Edit Shareholder">✎</button>
       </td>
       <td>
         <input type="number" step="any" class="cell-percentage-editable" value="${holder.percentage.toFixed(1)}" 

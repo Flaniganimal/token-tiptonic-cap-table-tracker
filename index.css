@@ -184,6 +184,21 @@ header {
   transform: translateY(0);
 }
 
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+  border: 1px solid var(--red);
+}
+
+.btn-danger:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+}
+
 .btn-secondary {
   background: var(--surface2);
   color: var(--text);
@@ -490,7 +505,7 @@ header {
 }
 
 .cell-actions {
-  width: 64px;
+  width: 40px;
   text-align: center;
   white-space: nowrap;
 }

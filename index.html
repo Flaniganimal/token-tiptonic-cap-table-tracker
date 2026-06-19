@@ -107,7 +107,7 @@
                 <thead>
                   <tr>
                     <th>Shareholder Name</th>
-                    <th style="width: 64px;"></th>
+                    <th style="width: 40px;"></th>
                     <th style="width: 120px;">Ownership %</th>
                   </tr>
                 </thead>
@@ -133,7 +133,7 @@
                 <thead>
                   <tr>
                     <th>Shareholder Name</th>
-                    <th style="width: 64px;"></th>
+                    <th style="width: 40px;"></th>
                     <th style="width: 120px;">Ownership %</th>
                   </tr>
                 </thead>
@@ -268,7 +268,7 @@
   <div class="modal-overlay" id="edit-source-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-edit-source-title">Change Source</h3>
+        <h3 class="modal-title">Change Source</h3>
         <button class="modal-close" id="modal-close-edit-source">&times;</button>
       </div>
       
@@ -279,13 +279,19 @@
         </div>
         
         <div class="form-group">
+          <label class="form-label">Current Source</label>
+          <div class="form-value" id="edit-source-current" style="font-size: 0.85rem; color: var(--muted); padding: 6px 0;"></div>
+        </div>
+        
+        <div class="form-group">
           <label for="select-edit-source" class="form-label">New Source (Dilution origin)</label>
           <select id="select-edit-source" class="form-select">
-            <option value="prorata">All holders (pro rata)</option>
+            <option value="prorata">Select all holders (pro rata)</option>
           </select>
         </div>
         
         <div class="modal-actions">
+          <button type="button" class="btn btn-danger" id="modal-delete-shareholder" style="margin-right: auto;">Delete</button>
           <button type="button" class="btn btn-secondary" id="modal-cancel-edit-source">Cancel</button>
           <button type="submit" class="btn btn-primary">Apply</button>
         </div>
