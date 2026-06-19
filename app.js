@@ -65,6 +65,10 @@ const elements = {
   proformaTableBody: document.getElementById('proforma-table-body'),
   proformaTableTotal: document.getElementById('proforma-table-total'),
   
+  // Toggles
+  toggleAtClose: document.getElementById('toggle-at-close'),
+  toggleFullyVested: document.getElementById('toggle-fully-vested'),
+  
   // Shareholder Modal
   addShareholderModal: document.getElementById('add-shareholder-modal'),
   modalCloseAdd: document.getElementById('modal-close-add'),
@@ -200,6 +204,10 @@ function init() {
   elements.modalCancelAdd.addEventListener('click', closeAddShareholderModal);
   elements.formAddShareholder.addEventListener('submit', handleAddShareholderSubmit);
   
+  // Toggles
+  elements.toggleAtClose.addEventListener('click', () => setVestingState('close'));
+  elements.toggleFullyVested.addEventListener('click', () => setVestingState('vested'));
+  
   // Save Action
   elements.btnSaveVersionHeader.addEventListener('click', openSaveVersionModal);
   elements.modalCloseSave.addEventListener('click', closeSaveVersionModal);
@@ -261,7 +269,31 @@ function init() {
     }
   });
 
+  // Sync toggle buttons with loaded vesting state
+  if (state.vestingState === 'vested') {
+    elements.toggleAtClose.classList.remove('active');
+    elements.toggleFullyVested.classList.add('active');
+  } else {
+    elements.toggleAtClose.classList.add('active');
+    elements.toggleFullyVested.classList.remove('active');
+  }
+
   // Perform initial render
+  render();
+}
+
+function setVestingState(vState) {
+  state.vestingState = vState;
+  persistStateLocal();
+  
+  if (vState === 'close') {
+    elements.toggleAtClose.classList.add('active');
+    elements.toggleFullyVested.classList.remove('active');
+  } else {
+    elements.toggleAtClose.classList.remove('active');
+    elements.toggleFullyVested.classList.add('active');
+  }
+  
   render();
 }
 
@@ -750,7 +782,7 @@ function restoreVersion(versionId) {
     elements.inputCashInvestment.value = formatCurrency(state.cashInvestment);
     elements.inputTokenDebt.value = formatCurrency(state.tokenWorkingCapitalDebt);
     
-    state.vestingState = 'vested';
+    setVestingState(state.vestingState || 'vested');
     persistStateLocal();
     render();
     
@@ -864,40 +896,33 @@ function renderProforma() {
   const jayHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'jay');
   const cjHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase().includes('christina') || h.name.toLowerCase().includes('jack'));
   
-  // Calculate earn-in dilution (Fully Diluted mode only)
+  // Calculate earn-in dilution (the gap between current % and 40% target for Ben & Jay)
   let totalEarnInDilution = 0;
-  if (state.vestingState === 'vested') {
-    if (benHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - benHolder.percentage);
-    if (jayHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - jayHolder.percentage);
-  }
+  if (benHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - benHolder.percentage);
+  if (jayHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - jayHolder.percentage);
   
   state.tiptonicCapTable.forEach(holder => {
     let effectivePct = holder.percentage;
     
-    if (state.vestingState === 'vested') {
-      if (benHolder && holder.id === benHolder.id) {
+    if ((benHolder && holder.id === benHolder.id) || (jayHolder && holder.id === jayHolder.id)) {
+      // Ben & Jay: use current % in Outstanding, 40% in Fully Diluted
+      if (state.vestingState === 'vested') {
         effectivePct = BEN_JAY_VESTED_TARGET;
-      } else if (jayHolder && holder.id === jayHolder.id) {
-        effectivePct = BEN_JAY_VESTED_TARGET;
-      } else if (cjHolder && holder.id === cjHolder.id) {
-        effectivePct = Math.max(0, holder.percentage - totalEarnInDilution);
       }
+      // Outstanding: use their current cap table %
+    } else if (cjHolder && holder.id === cjHolder.id) {
+      // Christina & Jack: ALWAYS use fully diluted percentage
+      effectivePct = Math.max(0, holder.percentage - totalEarnInDilution);
     }
+    // Other holders: always use their cap table %
     
     const pfPct = (effectivePct / 100) * tiptonicSlice * 100;
     totalProformaPct += pfPct;
     
-    // Skip Christina & Jack — they'll be combined with cash investment
+    // Skip Christina & Jack — combined with cash investment below
     if (cjHolder && holder.id === cjHolder.id) return;
     
-    let subtitle = `Tiptonic Shareholder (${holder.percentage.toFixed(1)}%)`;
-    if (state.vestingState === 'vested') {
-      if ((benHolder && holder.id === benHolder.id) || (jayHolder && holder.id === jayHolder.id)) {
-        subtitle = `Tiptonic Earn-in (Fully Diluted: ${BEN_JAY_VESTED_TARGET.toFixed(0)}% of Tiptonic slice)`;
-      }
-    }
-    
-    proformaRows.push({ name: holder.name, subtitle, pct: pfPct });
+    proformaRows.push({ name: holder.name, subtitle: '', pct: pfPct });
   });
   
   // 3. Christina & Jack combined: Tiptonic equity + Cash Investment
@@ -906,22 +931,23 @@ function renderProforma() {
   
   let cjTiptonicPct = 0;
   if (cjHolder) {
-    let cjEffective = cjHolder.percentage;
-    if (state.vestingState === 'vested') {
-      cjEffective = Math.max(0, cjHolder.percentage - totalEarnInDilution);
-    }
+    const cjEffective = Math.max(0, cjHolder.percentage - totalEarnInDilution);
     cjTiptonicPct = (cjEffective / 100) * tiptonicSlice * 100;
   }
   const cjTotalPct = cjTiptonicPct + cashPct;
   
   proformaRows.push({
     name: cjHolder ? cjHolder.name : 'Christina & Jack',
-    subtitle: 'Tiptonic Equity + Cash Investment',
+    subtitle: '',
     pct: cjTotalPct
   });
   
-  // 4. Earn-in Reserve: 0% in fully diluted (all allocated to Ben & Jay)
-  const earnInReservePct = 0.0;
+  // 4. Earn-in Reserve: non-zero in Outstanding (unvested), 0 in Fully Diluted
+  let earnInReservePct = 0;
+  if (state.vestingState === 'close') {
+    // In Outstanding: the reserve holds the shares Ben & Jay haven't earned yet
+    earnInReservePct = (totalEarnInDilution / 100) * tiptonicSlice * 100;
+  }
   totalProformaPct += earnInReservePct;
   proformaRows.push({
     name: 'Earn-in Reserve',
