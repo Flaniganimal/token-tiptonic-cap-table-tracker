@@ -387,9 +387,26 @@ function deleteShareholder(tableTarget, id) {
   if (index !== -1) {
     const name = table[index].name;
     table.splice(index, 1);
+    
+    // Pro-rata redistribution of the deleted shareholder's percent
+    if (table.length > 0) {
+      const sumRemaining = table.reduce((acc, h) => acc + h.percentage, 0);
+      if (sumRemaining > 0) {
+        const scaleFactor = 100.0 / sumRemaining;
+        table.forEach(h => {
+          h.percentage = h.percentage * scaleFactor;
+        });
+      } else {
+        const equalPct = 100.0 / table.length;
+        table.forEach(h => {
+          h.percentage = equalPct;
+        });
+      }
+    }
+    
     persistStateLocal();
     render();
-    showToast(`Removed shareholder "${name}". Note: Cap table total may no longer equal 100%.`, 'error');
+    showToast(`Removed shareholder "${name}". Remaining shares scaled pro rata to 100.0%.`);
   }
 }
 

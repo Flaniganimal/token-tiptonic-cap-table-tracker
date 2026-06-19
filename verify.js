@@ -166,4 +166,33 @@ assert(specificToken.find(h => h.name === 'Daniel & Nadia').percentage === 70.0,
 assert(specificToken.find(h => h.name === 'Joseph McDonough').percentage === 20.0, "Joseph McDonough should be unchanged at 20%");
 console.log("✅ Dilution Specific Source: PASS");
 
+// Deletion Scaling Helper
+function deleteShareholderTest(table, id) {
+  const newTable = JSON.parse(JSON.stringify(table));
+  const index = newTable.findIndex(h => h.id === id);
+  if (index !== -1) {
+    newTable.splice(index, 1);
+    if (newTable.length > 0) {
+      const sumRemaining = newTable.reduce((acc, h) => acc + h.percentage, 0);
+      if (sumRemaining > 0) {
+        const scaleFactor = 100.0 / sumRemaining;
+        newTable.forEach(h => {
+          h.percentage = h.percentage * scaleFactor;
+        });
+      }
+    }
+  }
+  return newTable;
+}
+
+// Test Case 6: Deletion scaling pro-rata
+console.log("- Testing Deletion scaling pro-rata...");
+const dilatedToken = addShareholder(defaultTokenCap, "Alice", 20.0, 'prorata');
+const restoredToken = deleteShareholderTest(dilatedToken, dilatedToken.find(h => h.name === "Alice").id);
+const sumRestored = restoredToken.reduce((acc, h) => acc + h.percentage, 0);
+assert(Math.abs(sumRestored - 100.0) < 0.0001, "Restored table total must sum to 100.0%");
+assert(restoredToken.find(h => h.name === 'Daniel & Nadia').percentage === 80.0, "Daniel & Nadia should return to 80.0%");
+assert(restoredToken.find(h => h.name === 'Joseph McDonough').percentage === 20.0, "Joseph McDonough should return to 20.0%");
+console.log("✅ Deletion scaling: PASS");
+
 console.log("\n🎉 ALL ACCEPTANCE CHECKS PASSED SUCCESSFULLY!");
