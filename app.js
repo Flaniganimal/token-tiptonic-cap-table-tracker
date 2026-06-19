@@ -18,6 +18,11 @@ let state = {
     { id: 'tp4', name: 'Other', percentage: 15.0 }
   ],
   
+  // Undo stacks: stores snapshots of cap tables before adding shareholders
+  // Each entry: { addedId, snapshot: [{ id, name, percentage }] }
+  tokenUndoStack: [],
+  tiptonicUndoStack: [],
+  
   // Vesting Toggle: 'close' (At Close) or 'vested' (Fully Vested)
   vestingState: 'close',
   
@@ -109,6 +114,11 @@ function formatPercentage(val) {
   return val.toFixed(1) + '%';
 }
 
+// Round percentage to 1 decimal to avoid floating-point drift
+function roundPct(val) {
+  return Math.round(val * 10) / 10;
+}
+
 // Toast Alert Helper
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -196,6 +206,34 @@ function init() {
       // Validate structure before loading
       if (parsed.tokenCapTable && parsed.tiptonicCapTable) {
         state = { ...state, ...parsed };
+        // Ensure undo stacks exist (older cached states won't have them)
+        if (!Array.isArray(state.tokenUndoStack)) state.tokenUndoStack = [];
+        if (!Array.isArray(state.tiptonicUndoStack)) state.tiptonicUndoStack = [];
+        
+        // Validate cap table integrity: if percentages don't sum to ~100%, 
+        // it's corrupted from a previous buggy session. Reset to defaults.
+        const tokenSum = state.tokenCapTable.reduce((s, h) => s + h.percentage, 0);
+        const tiptonicSum = state.tiptonicCapTable.reduce((s, h) => s + h.percentage, 0);
+        
+        if (Math.abs(tokenSum - 100.0) > 0.5) {
+          console.warn("Token cap table sum was corrupted (" + tokenSum.toFixed(1) + "%). Resetting to defaults.");
+          state.tokenCapTable = [
+            { id: 't1', name: 'Daniel & Nadia', percentage: 80.0 },
+            { id: 't2', name: 'Joseph McDonough', percentage: 20.0 }
+          ];
+          state.tokenUndoStack = [];
+        }
+        
+        if (Math.abs(tiptonicSum - 100.0) > 0.5) {
+          console.warn("Tiptonic cap table sum was corrupted (" + tiptonicSum.toFixed(1) + "%). Resetting to defaults.");
+          state.tiptonicCapTable = [
+            { id: 'tp1', name: 'Ben', percentage: 10.0 },
+            { id: 'tp2', name: 'Jay', percentage: 10.0 },
+            { id: 'tp3', name: 'Christina & Jack', percentage: 65.0 },
+            { id: 'tp4', name: 'Other', percentage: 15.0 }
+          ];
+          state.tiptonicUndoStack = [];
+        }
       }
     }
   } catch (e) {
@@ -341,6 +379,7 @@ function handleAddShareholderSubmit(e) {
   if (!valid) return;
   
   const table = activeModalTableTarget === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const undoStack = activeModalTableTarget === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
   
   // Validate if specific source has enough percentage
   if (source !== 'prorata') {
@@ -352,26 +391,34 @@ function handleAddShareholderSubmit(e) {
     }
   }
   
+  // Snapshot current table BEFORE dilution so we can restore on delete
+  const snapshot = table.map(h => ({ id: h.id, name: h.name, percentage: h.percentage }));
+  
+  // Add new shareholder id early so we can reference it in the undo stack
+  const newId = (activeModalTableTarget === 'token' ? 't_' : 'tp_') + Date.now();
+  
   // Perform dilution scaling
   if (source === 'prorata') {
     // Pro rata: scale down all existing shareholders proportionally
     const scaleFactor = (100 - pct) / 100;
     table.forEach(h => {
-      h.percentage = h.percentage * scaleFactor;
+      h.percentage = roundPct(h.percentage * scaleFactor);
     });
   } else {
     // Specific holder dilution
     const sourceHolder = table.find(h => h.id === source);
-    sourceHolder.percentage -= pct;
+    sourceHolder.percentage = roundPct(sourceHolder.percentage - pct);
   }
   
   // Add new shareholder
-  const newId = (activeModalTableTarget === 'token' ? 't_' : 'tp_') + Date.now();
   table.push({
     id: newId,
     name: name,
-    percentage: pct
+    percentage: roundPct(pct)
   });
+  
+  // Push undo snapshot
+  undoStack.push({ addedId: newId, snapshot: snapshot });
   
   // Persist and render
   persistStateLocal();
@@ -383,30 +430,61 @@ function handleAddShareholderSubmit(e) {
 // Delete shareholder
 function deleteShareholder(tableTarget, id) {
   const table = tableTarget === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const undoStack = tableTarget === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
   const index = table.findIndex(h => h.id === id);
   if (index !== -1) {
     const name = table[index].name;
-    table.splice(index, 1);
     
-    // Pro-rata redistribution of the deleted shareholder's percent
-    if (table.length > 0) {
-      const sumRemaining = table.reduce((acc, h) => acc + h.percentage, 0);
-      if (sumRemaining > 0) {
-        const scaleFactor = 100.0 / sumRemaining;
-        table.forEach(h => {
-          h.percentage = h.percentage * scaleFactor;
-        });
-      } else {
-        const equalPct = 100.0 / table.length;
-        table.forEach(h => {
-          h.percentage = equalPct;
-        });
+    // Check if we have a snapshot for this shareholder (i.e., they were added via the Add dialog)
+    const undoIndex = undoStack.findIndex(entry => entry.addedId === id);
+    
+    if (undoIndex !== -1) {
+      // Restore the snapshot: reset existing shareholders to their pre-add percentages
+      const snapshot = undoStack[undoIndex].snapshot;
+      
+      // Remove the added shareholder
+      table.splice(index, 1);
+      
+      // Restore original percentages for all shareholders that existed before the add
+      snapshot.forEach(snapHolder => {
+        const current = table.find(h => h.id === snapHolder.id);
+        if (current) {
+          current.percentage = snapHolder.percentage;
+        }
+      });
+      
+      // Remove this undo entry and any subsequent ones that depend on it
+      undoStack.splice(undoIndex, 1);
+    } else {
+      // No snapshot available (e.g., a default shareholder was deleted, or state loaded from storage)
+      // Fallback: pro-rata redistribution with rounding
+      table.splice(index, 1);
+      
+      if (table.length > 0) {
+        const sumRemaining = table.reduce((acc, h) => acc + h.percentage, 0);
+        if (sumRemaining > 0) {
+          const scaleFactor = 100.0 / sumRemaining;
+          table.forEach(h => {
+            h.percentage = roundPct(h.percentage * scaleFactor);
+          });
+          // Fix any tiny remainder to ensure exact 100.0%
+          const newSum = table.reduce((acc, h) => acc + h.percentage, 0);
+          const diff = roundPct(100.0 - newSum);
+          if (Math.abs(diff) > 0 && Math.abs(diff) <= 0.1) {
+            table[0].percentage = roundPct(table[0].percentage + diff);
+          }
+        } else {
+          const equalPct = roundPct(100.0 / table.length);
+          table.forEach(h => {
+            h.percentage = equalPct;
+          });
+        }
       }
     }
     
     persistStateLocal();
     render();
-    showToast(`Removed shareholder "${name}". Remaining shares scaled pro rata to 100.0%.`);
+    showToast(`Removed shareholder "${name}". Ownership restored.`);
   }
 }
 
@@ -424,10 +502,13 @@ function updateShareholderName(tableTarget, id, name) {
 // Edit percentage directly on cell
 function updateShareholderPct(tableTarget, id, pctVal) {
   const table = tableTarget === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const undoStack = tableTarget === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
   const holder = table.find(h => h.id === id);
   if (holder) {
     const parsed = parseFloat(pctVal);
-    holder.percentage = isNaN(parsed) ? 0 : parsed;
+    holder.percentage = isNaN(parsed) ? 0 : roundPct(parsed);
+    // Clear undo stack when user manually edits percentages, since snapshots are no longer valid
+    undoStack.length = 0;
     persistStateLocal();
     render();
   }
