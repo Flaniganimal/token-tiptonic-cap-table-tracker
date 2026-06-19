@@ -718,26 +718,24 @@ function closeSaveVersionModal() {
 async function handleSaveVersionSubmit(e) {
   e.preventDefault();
   
-  const label = elements.inputVersionLabel.value.trim();
-  if (!label) {
-    elements.errorVersionLabel.innerText = "Please enter a version label.";
-    elements.errorVersionLabel.style.display = 'block';
-    return;
-  }
+  const description = elements.inputVersionLabel.value.trim();
   elements.errorVersionLabel.style.display = 'none';
   
   // Close modal and show saving feedback
   closeSaveVersionModal();
-  showToast("Saving version to Vercel KV...", "success");
+  showToast("Saving version...", "success");
   
   try {
     // Re-fetch modelVersions list from KV first to get latest
     const versions = await loadVersions();
     
+    const timestamp = new Date().toISOString();
+    const label = description || new Date().toLocaleString();
+    
     // Create new version object
     const newVersion = {
       id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-      ts: new Date().toISOString(),
+      ts: timestamp,
       label: label,
       type: 'manual',
       state: {
@@ -757,7 +755,7 @@ async function handleSaveVersionSubmit(e) {
     const trimmed = versions.sort((a,b) => b.ts.localeCompare(a.ts));
     
     await saveVersions(trimmed);
-    showToast(`Version "${label}" saved successfully.`);
+    showToast(`Version saved.`);
   } catch (err) {
     console.error(err);
     showToast("Failed to save version to Vercel KV.", "error");
@@ -990,7 +988,7 @@ async function renderVersions() {
     if (list.length === 0) {
       elements.versionsListContainer.innerHTML = `
         <div class="empty-state">
-          No saved versions found in database. Close this panel and click "Save Version" to snapshot your model.
+          No saved versions found. Close this panel and click "Save Version" to save your model.
         </div>
       `;
       return;
