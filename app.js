@@ -269,14 +269,10 @@ function init() {
     }
   });
 
-  // Sync toggle buttons with loaded vesting state
-  if (state.vestingState === 'vested') {
-    elements.toggleAtClose.classList.remove('active');
-    elements.toggleFullyVested.classList.add('active');
-  } else {
-    elements.toggleAtClose.classList.add('active');
-    elements.toggleFullyVested.classList.remove('active');
-  }
+  // Always default to Fully Diluted on page load
+  state.vestingState = 'vested';
+  elements.toggleAtClose.classList.remove('active');
+  elements.toggleFullyVested.classList.add('active');
 
   // Perform initial render
   render();
