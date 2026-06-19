@@ -1017,7 +1017,19 @@ async function renderVersions() {
 }
 
 // Run Initialisation on Page Load
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  updateThemeButton();
+});
+
+// Update theme toggle button label and icon to match current theme
+function updateThemeButton() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const iconEl = document.querySelector('.theme-icon');
+  const labelEl = document.querySelector('.theme-label');
+  if (iconEl) iconEl.textContent = isDark ? '🌙' : '☀️';
+  if (labelEl) labelEl.textContent = isDark ? 'Dark' : 'Light';
+}
 
 // Toggle Light / Dark Mode
 function toggleTheme() {
@@ -1034,6 +1046,8 @@ function toggleTheme() {
     next = 'dark';
     showToast("Switched to Dark Mode");
   }
+  
+  updateThemeButton();
   
   try {
     localStorage.setItem('token_tiptonic_theme', next);
