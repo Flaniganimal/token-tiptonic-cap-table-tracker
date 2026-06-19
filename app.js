@@ -364,7 +364,7 @@ function openAddShareholderModal(targetTable) {
   
   // Build source dropdown dynamically based on names in target table
   const table = targetTable === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
-  elements.selectShareholderSource.innerHTML = '<option value="prorata">All holders (pro rata)</option>';
+  elements.selectShareholderSource.innerHTML = '<option value="" disabled selected>Select</option><option value="prorata">All holders (pro rata)</option>';
   
   table.forEach(holder => {
     elements.selectShareholderSource.innerHTML += `<option value="${holder.id}">Dilute ${holder.name} only</option>`;
