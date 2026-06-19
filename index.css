@@ -948,8 +948,16 @@ header {
   }
 
   .parameter-input {
-    font-size: 0.82rem;
+    font-size: 16px;
     padding: 8px 10px 8px 20px;
+  }
+
+  /* Prevent iOS zoom on all inputs */
+  .cell-name-editable,
+  .cell-percentage-editable,
+  .form-input,
+  .form-select {
+    font-size: 16px;
   }
 
   .parameter-value-readonly {
