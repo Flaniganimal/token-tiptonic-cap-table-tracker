@@ -417,6 +417,23 @@ function handleAddShareholderSubmit(e) {
     percentage: roundPct(pct)
   });
   
+  // Fix rounding remainder: ensure table sums to exactly 100.0%
+  // Adjust the largest existing shareholder (not the new one) to absorb any drift
+  const currentSum = table.reduce((s, h) => s + h.percentage, 0);
+  const remainder = roundPct(100.0 - currentSum);
+  if (remainder !== 0) {
+    // Find the largest shareholder (excluding the newly added one) to absorb the remainder
+    let largest = null;
+    table.forEach(h => {
+      if (h.id !== newId && (largest === null || h.percentage > largest.percentage)) {
+        largest = h;
+      }
+    });
+    if (largest) {
+      largest.percentage = roundPct(largest.percentage + remainder);
+    }
+  }
+  
   // Push undo snapshot
   undoStack.push({ addedId: newId, snapshot: snapshot });
   
