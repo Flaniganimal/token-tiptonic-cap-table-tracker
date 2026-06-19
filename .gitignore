@@ -1,0 +1,5 @@
+node_modules/
+.env
+.vercel/
+local_kv.json
+*.log

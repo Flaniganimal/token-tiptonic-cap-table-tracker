@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token × Tiptonic — Cap Table & Deal Tracker</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Global Header -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-symbol"></div>
+      <h1 class="logo-text">Token × Tiptonic</h1>
+    </div>
+    
+    <nav class="nav-tabs">
+      <button class="nav-tab active" id="tab-studio">Model Studio</button>
+      <button class="nav-tab" id="tab-versions">Saved Versions</button>
+    </nav>
+    
+    <div class="header-actions">
+      <button class="btn btn-primary" id="btn-save-version-header">Save Version</button>
+    </div>
+  </header>
+
+  <!-- View: Model Studio -->
+  <main class="view active" id="view-studio">
+    <div class="app-container">
+      
+      <!-- Top Panel: Deal Parameters -->
+      <section class="deal-parameters-panel" aria-label="Deal Parameters">
+        <h2 class="panel-header">Deal Parameters</h2>
+        <div class="parameters-grid">
+          
+          <div class="parameter-card">
+            <label for="input-token-value" class="parameter-label">Token Pre-Merger Value</label>
+            <div class="parameter-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="text" id="input-token-value" class="parameter-input" value="4,860,000">
+            </div>
+          </div>
+          
+          <div class="parameter-card">
+            <label for="input-tiptonic-value" class="parameter-label">Tiptonic Pre-Merger Value</label>
+            <div class="parameter-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="text" id="input-tiptonic-value" class="parameter-input" value="290,000">
+            </div>
+          </div>
+          
+          <div class="parameter-card">
+            <label for="input-cash-investment" class="parameter-label">Cash Investment</label>
+            <div class="parameter-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="text" id="input-cash-investment" class="parameter-input" value="500,000">
+            </div>
+          </div>
+          
+          <div class="parameter-card">
+            <label for="input-token-debt" class="parameter-label">Token Working Capital Debt</label>
+            <div class="parameter-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="text" id="input-token-debt" class="parameter-input" value="30,000">
+            </div>
+          </div>
+          
+          <div class="parameter-card readonly">
+            <span class="parameter-label">Post-Merger Value</span>
+            <div class="parameter-value-readonly" id="readonly-post-merger-value">$5,620,000</div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- Dashboard Tables Grid -->
+      <div class="dashboard-grid">
+        
+        <!-- Left Column: Pre-Merger Tables -->
+        <div class="cap-table-column">
+          
+          <!-- Token Pre-Merger Table -->
+          <div class="cap-table-card">
+            <div class="table-title-row">
+              <h2 class="table-title">Token Pre-Merger Cap Table</h2>
+              <button class="btn btn-secondary" id="btn-add-token-shareholder">+ Add Shareholder</button>
+            </div>
+            <div class="app-table-wrapper">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Shareholder Name</th>
+                    <th style="width: 100px;">Ownership %</th>
+                    <th style="width: 48px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="token-table-body">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span class="footer-total-label">Total Token Ownership</span>
+              <span class="footer-total-value total-valid" id="token-table-total">100.0%</span>
+            </div>
+          </div>
+          
+          <!-- Tiptonic Pre-Merger Table -->
+          <div class="cap-table-card">
+            <div class="table-title-row">
+              <h2 class="table-title">Tiptonic Pre-Merger Cap Table</h2>
+              <button class="btn btn-secondary" id="btn-add-tiptonic-shareholder">+ Add Shareholder</button>
+            </div>
+            <div class="app-table-wrapper">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Shareholder Name</th>
+                    <th style="width: 100px;">Ownership %</th>
+                    <th style="width: 48px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="tiptonic-table-body">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span class="footer-total-label">Total Tiptonic Ownership</span>
+              <span class="footer-total-value total-valid" id="tiptonic-table-total">100.0%</span>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Right Column: Pro Forma Computed Table -->
+        <div class="cap-table-column">
+          
+          <div class="cap-table-card">
+            <div class="table-title-row">
+              <div>
+                <h2 class="table-title">Pro Forma Cap Table (Post-Merger)</h2>
+                <div class="table-subtitle" style="margin-top: 4px;">Computed &bull; Read-Only</div>
+              </div>
+              
+              <div class="toggle-container" role="radiogroup" aria-label="Vesting State Selection">
+                <button class="toggle-btn active" id="toggle-at-close" role="radio" aria-checked="true">At Close</button>
+                <button class="toggle-btn" id="toggle-fully-vested" role="radio" aria-checked="false">Fully Vested</button>
+              </div>
+            </div>
+            
+            <div class="app-table-wrapper">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>Post-Merger Shareholder</th>
+                    <th style="width: 120px;">Ownership %</th>
+                  </tr>
+                </thead>
+                <tbody id="proforma-table-body">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span class="footer-total-label">Total Pro Forma Ownership</span>
+              <span class="footer-total-value total-valid" id="proforma-table-total">100.0%</span>
+            </div>
+          </div>
+          
+        </div>
+        
+      </div>
+    </div>
+  </main>
+
+  <!-- View: Saved Versions -->
+  <main class="view" id="view-versions">
+    <div class="versions-container">
+      <div class="versions-header">
+        <h2 class="versions-title">Saved Versions</h2>
+        <button class="btn btn-secondary" onclick="switchTab('studio')">&larr; Back to Studio</button>
+      </div>
+      
+      <div id="versions-list-container" class="version-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: Add Shareholder -->
+  <div class="modal-overlay" id="add-shareholder-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-shareholder-title">Add Shareholder</h3>
+        <button class="modal-close" id="modal-close-add">&times;</button>
+      </div>
+      
+      <form id="form-add-shareholder">
+        <div class="form-group">
+          <label for="input-shareholder-name" class="form-label">Name</label>
+          <input type="text" id="input-shareholder-name" class="form-input" placeholder="e.g. Alice Smith" required>
+          <div class="form-error" id="error-shareholder-name"></div>
+        </div>
+        
+        <div class="form-group">
+          <label for="input-shareholder-pct" class="form-label">Ownership %</label>
+          <input type="number" step="any" id="input-shareholder-pct" class="form-input" placeholder="e.g. 5.0" required>
+          <div class="form-error" id="error-shareholder-pct"></div>
+        </div>
+        
+        <div class="form-group">
+          <label for="select-shareholder-source" class="form-label">Source (Dilution origin)</label>
+          <select id="select-shareholder-source" class="form-select">
+            <option value="prorata">All holders (pro rata)</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-add">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Shareholder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Save Version -->
+  <div class="modal-overlay" id="save-version-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Save Version Snapshot</h3>
+        <button class="modal-close" id="modal-close-save">&times;</button>
+      </div>
+      
+      <form id="form-save-version">
+        <div class="form-group">
+          <label for="input-version-label" class="form-label">Version Label / Description</label>
+          <input type="text" id="input-version-label" class="form-input" placeholder="e.g. Baseline Default, 10% Cash Increase" required>
+          <div class="form-error" id="error-version-label"></div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-save">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Snapshot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+  <!-- Global bindings helper to make sure inline calls in app.js-created HTML work -->
+  <script>
+    // Map functions to window for onclick/onchange inline attributes used in dynamic HTML injection
+    window.deleteShareholder = deleteShareholder;
+    window.updateShareholderName = updateShareholderName;
+    window.updateShareholderPct = updateShareholderPct;
+    window.restoreVersion = restoreVersion;
+    window.deleteVersion = deleteVersion;
+    window.switchTab = switchTab;
+  </script>
+</body>
+</html>
