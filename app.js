@@ -878,69 +878,51 @@ function renderProforma() {
   let rowIdx = 1;
   let totalProformaPct = 0;
   
-  // 1 & 2. Token side: Daniel & Nadia + Joseph McDonough + any other token side shareholders
+  // Collect all pro forma rows, then sort largest to smallest
+  const proformaRows = [];
+  
+  // 1. Token side shareholders
   state.tokenCapTable.forEach(holder => {
     const pfPct = (holder.percentage / 100) * tokenShare * 100;
     totalProformaPct += pfPct;
-    
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>
-        <div style="display: flex; flex-direction: column;">
-          <span class="cell-name">${holder.name}</span>
-          <span class="table-subtitle" style="margin-top: 2px;">Token Table Shareholder (${holder.percentage.toFixed(1)}%)</span>
-        </div>
-      </td>
-      <td class="cell-percentage">${formatPercentage(pfPct)}</td>
-    `;
-    elements.proformaTableBody.appendChild(row);
+    proformaRows.push({
+      name: holder.name,
+      subtitle: `Token Table Shareholder (${holder.percentage.toFixed(1)}%)`,
+      pct: pfPct
+    });
   });
   
-  // 3. Tiptonic side: each holder gets their own row
-  // In Outstanding mode: each gets (their %) × tiptonicSlice
-  // In Fully Diluted mode: Ben and Jay earn up to 40% of Tiptonic slice each,
-  // with the additional equity coming FROM Christina & Jack's share
-  
+  // 2. Tiptonic side shareholders
   const benHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'ben');
   const jayHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'jay');
   const cjHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase().includes('christina') || h.name.toLowerCase().includes('jack'));
   
-  // Calculate earn-in dilution amounts (only in Fully Diluted mode)
+  // Calculate earn-in dilution (Fully Diluted mode only)
   let totalEarnInDilution = 0;
   if (state.vestingState === 'vested') {
-    if (benHolder) {
-      totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - benHolder.percentage);
-    }
-    if (jayHolder) {
-      totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - jayHolder.percentage);
-    }
+    if (benHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - benHolder.percentage);
+    if (jayHolder) totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - jayHolder.percentage);
   }
   
   state.tiptonicCapTable.forEach(holder => {
-    let effectivePct = holder.percentage; // default: their cap table %
+    let effectivePct = holder.percentage;
     
     if (state.vestingState === 'vested') {
-      // Fully Diluted adjustments
       if (benHolder && holder.id === benHolder.id) {
-        effectivePct = BEN_JAY_VESTED_TARGET; // 40%
+        effectivePct = BEN_JAY_VESTED_TARGET;
       } else if (jayHolder && holder.id === jayHolder.id) {
-        effectivePct = BEN_JAY_VESTED_TARGET; // 40%
+        effectivePct = BEN_JAY_VESTED_TARGET;
       } else if (cjHolder && holder.id === cjHolder.id) {
-        // Christina & Jack absorb the dilution
         effectivePct = Math.max(0, holder.percentage - totalEarnInDilution);
       }
-      // All other holders keep their original percentage
     }
     
     const pfPct = (effectivePct / 100) * tiptonicSlice * 100;
     totalProformaPct += pfPct;
     
-    // Skip rendering Christina & Jack here — they'll be combined with cash investment below
-    if (cjHolder && holder.id === cjHolder.id) {
-      return; // Skip row rendering; pfPct already added to totalProformaPct
-    }
+    // Skip Christina & Jack — they'll be combined with cash investment
+    if (cjHolder && holder.id === cjHolder.id) return;
     
-    // Build subtitle
     let subtitle = `Tiptonic Shareholder (${holder.percentage.toFixed(1)}%)`;
     if (state.vestingState === 'vested') {
       if ((benHolder && holder.id === benHolder.id) || (jayHolder && holder.id === jayHolder.id)) {
@@ -948,24 +930,13 @@ function renderProforma() {
       }
     }
     
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>
-        <div style="display: flex; flex-direction: column;">
-          <span class="cell-name">${holder.name}</span>
-          <span class="table-subtitle" style="margin-top: 2px;">${subtitle}</span>
-        </div>
-      </td>
-      <td class="cell-percentage">${formatPercentage(pfPct)}</td>
-    `;
-    elements.proformaTableBody.appendChild(row);
+    proformaRows.push({ name: holder.name, subtitle, pct: pfPct });
   });
   
-  // 4. Christina & Jack combined: Tiptonic equity + Cash Investment
+  // 3. Christina & Jack combined: Tiptonic equity + Cash Investment
   const cashPct = newmoneySlice * 100;
   totalProformaPct += cashPct;
   
-  // Find Christina & Jack's Tiptonic pro forma pct (already counted in totalProformaPct above)
   let cjTiptonicPct = 0;
   if (cjHolder) {
     let cjEffective = cjHolder.percentage;
@@ -976,17 +947,29 @@ function renderProforma() {
   }
   const cjTotalPct = cjTiptonicPct + cashPct;
   
-  const cashRow = document.createElement('tr');
-  cashRow.innerHTML = `
-    <td>
-      <div style="display: flex; flex-direction: column;">
-        <span class="cell-name">${cjHolder ? cjHolder.name : 'Christina & Jack'}</span>
-        <span class="table-subtitle" style="margin-top: 2px;">Tiptonic Equity + Cash Investment</span>
-      </div>
-    </td>
-    <td class="cell-percentage">${formatPercentage(cjTotalPct)}</td>
-  `;
-  elements.proformaTableBody.appendChild(cashRow);
+  proformaRows.push({
+    name: cjHolder ? cjHolder.name : 'Christina & Jack',
+    subtitle: 'Tiptonic Equity + Cash Investment',
+    pct: cjTotalPct
+  });
+  
+  // Sort all rows by percentage descending (largest first)
+  proformaRows.sort((a, b) => b.pct - a.pct);
+  
+  // Render sorted rows
+  proformaRows.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>
+        <div style="display: flex; flex-direction: column;">
+          <span class="cell-name">${item.name}</span>
+          <span class="table-subtitle" style="margin-top: 2px;">${item.subtitle}</span>
+        </div>
+      </td>
+      <td class="cell-percentage">${formatPercentage(item.pct)}</td>
+    `;
+    elements.proformaTableBody.appendChild(row);
+  });
   
   // Render total
   elements.proformaTableTotal.innerText = formatPercentage(totalProformaPct);
