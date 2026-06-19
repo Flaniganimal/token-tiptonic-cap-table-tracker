@@ -3,7 +3,7 @@ let state = {
   // Deal Parameters
   tokenPreMergerValue: 4860000,
   tiptonicPreMergerValue: 290000,
-  cashInvestment: 500000,
+  cashInvestment: 600000,
   tokenWorkingCapitalDebt: 30000,
   tiptonicDebt: 0,
   
