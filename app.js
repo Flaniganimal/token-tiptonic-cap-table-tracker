@@ -896,89 +896,69 @@ function renderProforma() {
     elements.proformaTableBody.appendChild(row);
   });
   
-  // 3 & 4. Tiptonic Earn-in: Ben and Jay
-  const benHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'ben') || { percentage: 10.0 };
-  const jayHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'jay') || { percentage: 10.0 };
+  // 3. Tiptonic side: each holder gets their own row
+  // In Outstanding mode: each gets (their %) × tiptonicSlice
+  // In Fully Diluted mode: Ben and Jay earn up to 40% of Tiptonic slice each,
+  // with the additional equity coming FROM Christina & Jack's share
   
-  let benProformaPct = 0;
-  let jayProformaPct = 0;
+  const benHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'ben');
+  const jayHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase() === 'jay');
+  const cjHolder = state.tiptonicCapTable.find(h => h.name.toLowerCase().includes('christina') || h.name.toLowerCase().includes('jack'));
   
-  if (state.vestingState === 'close') {
-    // At Close: translates at Tiptonic table %
-    benProformaPct = (benHolder.percentage / 100) * tiptonicSlice * 100;
-    jayProformaPct = (jayHolder.percentage / 100) * tiptonicSlice * 100;
-  } else {
-    // Fully Vested: 40% of Tiptonic slice each
-    benProformaPct = (BEN_JAY_VESTED_TARGET / 100) * tiptonicSlice * 100;
-    jayProformaPct = (BEN_JAY_VESTED_TARGET / 100) * tiptonicSlice * 100;
+  // Calculate earn-in dilution amounts (only in Fully Diluted mode)
+  let totalEarnInDilution = 0;
+  if (state.vestingState === 'vested') {
+    if (benHolder) {
+      totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - benHolder.percentage);
+    }
+    if (jayHolder) {
+      totalEarnInDilution += Math.max(0, BEN_JAY_VESTED_TARGET - jayHolder.percentage);
+    }
   }
   
-  totalProformaPct += benProformaPct;
-  totalProformaPct += jayProformaPct;
+  state.tiptonicCapTable.forEach(holder => {
+    let effectivePct = holder.percentage; // default: their cap table %
+    
+    if (state.vestingState === 'vested') {
+      // Fully Diluted adjustments
+      if (benHolder && holder.id === benHolder.id) {
+        effectivePct = BEN_JAY_VESTED_TARGET; // 40%
+      } else if (jayHolder && holder.id === jayHolder.id) {
+        effectivePct = BEN_JAY_VESTED_TARGET; // 40%
+      } else if (cjHolder && holder.id === cjHolder.id) {
+        // Christina & Jack absorb the dilution
+        effectivePct = Math.max(0, holder.percentage - totalEarnInDilution);
+      }
+      // All other holders keep their original percentage
+    }
+    
+    const pfPct = (effectivePct / 100) * tiptonicSlice * 100;
+    totalProformaPct += pfPct;
+    
+    // Build subtitle
+    let subtitle = `Tiptonic Shareholder (${holder.percentage.toFixed(1)}%)`;
+    if (state.vestingState === 'vested') {
+      if ((benHolder && holder.id === benHolder.id) || (jayHolder && holder.id === jayHolder.id)) {
+        subtitle = `Tiptonic Earn-in (Fully Diluted: ${BEN_JAY_VESTED_TARGET.toFixed(0)}% of Tiptonic slice)`;
+      } else if (cjHolder && holder.id === cjHolder.id && totalEarnInDilution > 0) {
+        subtitle = `Tiptonic Shareholder (${effectivePct.toFixed(1)}% after earn-in dilution)`;
+      }
+    }
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>
+        <div style="display: flex; flex-direction: column;">
+          <span class="cell-name">${holder.name}</span>
+          <span class="table-subtitle" style="margin-top: 2px;">${subtitle}</span>
+        </div>
+      </td>
+      <td class="cell-percentage">${formatPercentage(pfPct)}</td>
+    `;
+    elements.proformaTableBody.appendChild(row);
+  });
   
-  // Add Ben Row
-  const benRow = document.createElement('tr');
-  benRow.innerHTML = `
-    <td>
-      <div style="display: flex; flex-direction: column;">
-        <span class="cell-name">Ben</span>
-        <span class="table-subtitle" style="margin-top: 2px;">Tiptonic Earn-in (Fully Vested target: 40% of Tiptonic slice)</span>
-      </div>
-    </td>
-    <td class="cell-percentage">${formatPercentage(benProformaPct)}</td>
-  `;
-  elements.proformaTableBody.appendChild(benRow);
-  
-  // Add Jay Row
-  const jayRow = document.createElement('tr');
-  jayRow.innerHTML = `
-    <td>
-      <div style="display: flex; flex-direction: column;">
-        <span class="cell-name">Jay</span>
-        <span class="table-subtitle" style="margin-top: 2px;">Tiptonic Earn-in (Fully Vested target: 40% of Tiptonic slice)</span>
-      </div>
-    </td>
-    <td class="cell-percentage">${formatPercentage(jayProformaPct)}</td>
-  `;
-  elements.proformaTableBody.appendChild(jayRow);
-  
-  // 5. Residual Tiptonic Equity line
-  const benShareTiptonicScale = (benHolder.percentage / 100);
-  const jayShareTiptonicScale = (jayHolder.percentage / 100);
-  
-  let residualTiptonicPct = 0;
-  if (state.vestingState === 'close') {
-    // Remaining = slice - ben - jay (derived from table percentages)
-    residualTiptonicPct = (tiptonicSlice - (benProformaPct / 100) - (jayProformaPct / 100)) * 100;
-  } else {
-    // Remaining = slice - (2 * 40%) = 20% of Tiptonic slice
-    residualTiptonicPct = (tiptonicSlice - (benProformaPct / 100) - (jayProformaPct / 100)) * 100;
-  }
-  
-  // Guard against negative (shouldn't happen with default inputs but good math check)
-  residualTiptonicPct = Math.max(0, residualTiptonicPct);
-  totalProformaPct += residualTiptonicPct;
-  
-  // Find names of other Tiptonic shareholders to build dynamic label
-  const nonEarnInHolders = state.tiptonicCapTable.filter(h => h.name.toLowerCase() !== 'ben' && h.name.toLowerCase() !== 'jay');
-  let residualLabel = 'Christina & Jack + Other';
-  if (nonEarnInHolders.length > 0) {
-    residualLabel = nonEarnInHolders.map(h => h.name).join(' & ');
-  }
-  
-  const residualRow = document.createElement('tr');
-  residualRow.innerHTML = `
-    <td>
-      <div style="display: flex; flex-direction: column;">
-        <span class="cell-name">${residualLabel}</span>
-        <span class="table-subtitle" style="margin-top: 2px;">Remaining Legacy Tiptonic Equity (Residual)</span>
-      </div>
-    </td>
-    <td class="cell-percentage">${formatPercentage(residualTiptonicPct)}</td>
-  `;
-  elements.proformaTableBody.appendChild(residualRow);
-  
-  // 6. Cash Investment line (goes to Jack & Christina)
+  // 4. Cash Investment line (goes to Jack & Christina)
   const cashPct = newmoneySlice * 100;
   totalProformaPct += cashPct;
   
