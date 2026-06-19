@@ -610,7 +610,7 @@ header {
   box-shadow: var(--card-shadow);
   border-radius: 12px;
   width: 440px;
-  max-width: 90%;
+  max-width: calc(100vw - 32px);
   padding: 24px;
   font-family: 'DM Sans', sans-serif;
   transform: translateY(20px) scale(0.95);
