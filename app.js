@@ -960,12 +960,7 @@ function renderProforma() {
   proformaRows.forEach(item => {
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td>
-        <div style="display: flex; flex-direction: column;">
-          <span class="cell-name">${item.name}</span>
-          <span class="table-subtitle" style="margin-top: 2px;">${item.subtitle}</span>
-        </div>
-      </td>
+      <td><span class="cell-name">${item.name}</span></td>
       <td class="cell-percentage">${formatPercentage(item.pct)}</td>
     `;
     elements.proformaTableBody.appendChild(row);
