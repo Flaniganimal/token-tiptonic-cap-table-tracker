@@ -58,6 +58,17 @@
   padding: 0;
 }
 
+/* Hide WebKit search/number spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Hide Firefox number spinners */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -446,8 +457,8 @@ header {
   color: var(--accent2);
   font-family: 'DM Mono', monospace;
   font-size: 0.85rem;
-  padding: 4px 8px;
-  width: 70px;
+  padding: 4px 6px;
+  width: 80px;
   text-align: right;
   border-radius: 4px;
   outline: none;

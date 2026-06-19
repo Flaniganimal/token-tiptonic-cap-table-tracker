@@ -572,7 +572,7 @@ function renderPreMergerTable(type) {
           onchange="updateShareholderName('${type}', '${holder.id}', this.value)">
       </td>
       <td>
-        <input type="number" step="any" class="cell-percentage-editable" value="${holder.percentage}" 
+        <input type="number" step="any" class="cell-percentage-editable" value="${holder.percentage.toFixed(1)}" 
           onchange="updateShareholderPct('${type}', '${holder.id}', this.value)">
       </td>
       <td class="cell-actions">
