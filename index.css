@@ -873,3 +873,258 @@ header {
 .theme-label {
   letter-spacing: 0.03em;
 }
+
+/* ── Mobile Responsive ────────────────────────────── */
+
+/* Tablets & small laptops */
+@media (max-width: 768px) {
+  /* Header: stack into rows */
+  header {
+    height: auto;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .logo-container {
+    gap: 8px;
+  }
+
+  .logo-text {
+    font-size: 0.75rem;
+  }
+
+  .nav-tabs {
+    order: 3;
+    width: 100%;
+    height: auto;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+
+  .nav-tab {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    border-bottom-width: 2px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .theme-toggle-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+
+  .theme-label {
+    display: none;
+  }
+
+  /* Container padding */
+  .app-container {
+    padding: 14px;
+    gap: 16px;
+  }
+
+  /* Deal Parameters */
+  .deal-parameters-panel {
+    padding: 14px;
+  }
+
+  .parameters-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .parameter-label {
+    font-size: 0.7rem;
+  }
+
+  .parameter-input {
+    font-size: 0.82rem;
+    padding: 8px 10px 8px 20px;
+  }
+
+  .parameter-value-readonly {
+    font-size: 1rem;
+  }
+
+  /* Cap Table Cards */
+  .cap-table-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .table-title {
+    font-size: 0.78rem;
+  }
+
+  .table-title-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Toggle wraps below title */
+  .toggle-container {
+    width: 100%;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  /* Table cells tighter */
+  .app-table th,
+  .app-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .app-table th {
+    font-size: 0.68rem;
+  }
+
+  .cell-percentage-editable {
+    width: 70px;
+    font-size: 0.8rem;
+  }
+
+  .cell-name-editable {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+  }
+
+  /* Footer */
+  .table-footer {
+    padding: 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Modals */
+  .modal-card {
+    width: 92%;
+    max-width: 400px;
+    padding: 18px;
+  }
+
+  /* Versions */
+  .versions-container {
+    padding: 14px;
+  }
+
+  .version-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .version-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Toast */
+  .toast-container {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .logo-symbol {
+    width: 18px;
+    height: 18px;
+  }
+
+  .logo-text {
+    font-size: 0.68rem;
+  }
+
+  .header-actions .btn-primary {
+    padding: 5px 8px;
+    font-size: 0.68rem;
+  }
+
+  /* Parameters: single column */
+  .parameters-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .app-container {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .deal-parameters-panel {
+    padding: 12px;
+  }
+
+  .cap-table-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .table-title {
+    font-size: 0.72rem;
+  }
+
+  .app-table th,
+  .app-table td {
+    padding: 7px 8px;
+    font-size: 0.78rem;
+  }
+
+  .app-table th {
+    font-size: 0.65rem;
+  }
+
+  .cell-percentage-editable {
+    width: 60px;
+    font-size: 0.78rem;
+  }
+
+  .modal-card {
+    width: 95%;
+    padding: 14px;
+  }
+
+  .modal-title {
+    font-size: 0.85rem;
+  }
+
+  .form-input, .form-select {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .modal-actions {
+    margin-top: 16px;
+    padding-top: 12px;
+  }
+
+  .versions-container {
+    padding: 10px;
+  }
+
+  .versions-title {
+    font-size: 1rem;
+  }
+}
