@@ -549,7 +549,7 @@ function editShareholderSource(tableType, holderId) {
   elements.editSourceCurrent.innerText = currentSourceLabel;
   
   // Build source dropdown dynamically from OTHER holders in the same table
-  elements.selectEditSource.innerHTML = '<option value="prorata">Select all holders (pro rata)</option>';
+  elements.selectEditSource.innerHTML = '<option value="" disabled selected>Select</option><option value="prorata">All holders (pro rata)</option>';
   table.forEach(h => {
     if (h.id !== holderId) {
       elements.selectEditSource.innerHTML += `<option value="${h.id}">Dilute ${h.name} only</option>`;
@@ -577,6 +577,10 @@ function handleEditSourceSubmit(e) {
   if (!holder) return;
   
   const newSource = elements.selectEditSource.value;
+  if (!newSource) {
+    showToast("Please select a source.", "error");
+    return;
+  }
   const pct = holder.percentage;
   
   // Step 1: Restore the pre-add snapshot if one exists
