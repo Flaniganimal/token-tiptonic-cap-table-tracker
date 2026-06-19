@@ -556,9 +556,8 @@ function editShareholderSource(tableType, holderId) {
     }
   });
   
-  // Update delete button label
-  const deleteLabel = tableType === 'token' ? 'Delete - Token' : 'Delete - Tiptonic';
-  elements.modalDeleteShareholder.innerText = deleteLabel;
+  // Set delete button label
+  elements.modalDeleteShareholder.innerText = 'Delete';
   
   elements.editSourceModal.classList.add('active');
 }

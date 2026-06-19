@@ -185,13 +185,14 @@ header {
 }
 
 .btn-danger {
-  background: var(--red);
+  background: #9b4d4d;
   color: #fff;
-  border: 1px solid var(--red);
+  border: 1px solid #9b4d4d;
 }
 
 .btn-danger:hover {
-  opacity: 0.85;
+  background: #874343;
+  border-color: #874343;
   transform: translateY(-1px);
 }
 
