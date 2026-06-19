@@ -825,9 +825,12 @@ function renderPreMergerTable(type) {
   
   bodyEl.innerHTML = '';
   
+  // Sort by percentage descending (largest first)
+  const sorted = [...table].sort((a, b) => b.percentage - a.percentage);
+  
   let totalPct = 0;
   
-  table.forEach(holder => {
+  sorted.forEach(holder => {
     totalPct += holder.percentage;
     
     const row = document.createElement('tr');
