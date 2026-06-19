@@ -229,7 +229,7 @@ header {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   padding: 4px;
   transition: color 0.15s ease;
 }
@@ -384,6 +384,11 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.table-title-row .btn {
+  padding: 4px 10px;
+  font-size: 0.7rem;
 }
 
 .table-title {

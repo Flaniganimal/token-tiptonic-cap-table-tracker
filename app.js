@@ -826,12 +826,12 @@ function renderPreMergerTable(type) {
         <input type="text" class="cell-name-editable" value="${holder.name}" 
           onchange="updateShareholderName('${type}', '${holder.id}', this.value)">
       </td>
-      <td class="cell-actions">
-        <button class="btn-edit-link" onclick="editShareholderSource('${type}', '${holder.id}')" title="Edit Shareholder">✎</button>
-      </td>
       <td>
         <input type="number" step="any" class="cell-percentage-editable" value="${holder.percentage.toFixed(1)}" 
           onchange="updateShareholderPct('${type}', '${holder.id}', this.value)">
+      </td>
+      <td class="cell-actions">
+        <button class="btn-edit-link" onclick="editShareholderSource('${type}', '${holder.id}')" title="Edit Shareholder">✎</button>
       </td>
     `;
     bodyEl.appendChild(row);
