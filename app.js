@@ -5,6 +5,7 @@ let state = {
   tiptonicPreMergerValue: 290000,
   cashInvestment: 500000,
   tokenWorkingCapitalDebt: 30000,
+  tiptonicDebt: 0,
   
   // Cap Tables
   tokenCapTable: [
@@ -23,8 +24,8 @@ let state = {
   tokenUndoStack: [],
   tiptonicUndoStack: [],
   
-  // Vesting Toggle: 'close' (At Close) or 'vested' (Fully Vested)
-  vestingState: 'close',
+  // Vesting Toggle: 'close' (Outstanding) or 'vested' (Fully Diluted)
+  vestingState: 'vested',
   
   // Active Navigation Tab: 'studio' or 'versions'
   activeTab: 'studio'
@@ -53,6 +54,7 @@ const elements = {
   inputTiptonicValue: document.getElementById('input-tiptonic-value'),
   inputCashInvestment: document.getElementById('input-cash-investment'),
   inputTokenDebt: document.getElementById('input-token-debt'),
+  inputTiptonicDebt: document.getElementById('input-tiptonic-debt'),
   readonlyPostMergerValue: document.getElementById('readonly-post-merger-value'),
   
   // Tables
@@ -189,6 +191,7 @@ function init() {
   setupNumericInput(elements.inputTiptonicValue, 'tiptonicPreMergerValue');
   setupNumericInput(elements.inputCashInvestment, 'cashInvestment');
   setupNumericInput(elements.inputTokenDebt, 'tokenWorkingCapitalDebt');
+  setupNumericInput(elements.inputTiptonicDebt, 'tiptonicDebt');
   
   // Navigation Tabs
   elements.tabStudio.addEventListener('click', () => switchTab('studio'));
@@ -265,6 +268,15 @@ function init() {
       renderVersions();
     }
   });
+
+  // Sync toggle buttons with loaded vesting state
+  if (state.vestingState === 'vested') {
+    elements.toggleAtClose.classList.remove('active');
+    elements.toggleFullyVested.classList.add('active');
+  } else {
+    elements.toggleAtClose.classList.add('active');
+    elements.toggleFullyVested.classList.remove('active');
+  }
 
   // Perform initial render
   render();
@@ -798,7 +810,7 @@ async function deleteVersion(versionId) {
 function render() {
   // Post-merger formula
   const tokenEquity = Math.max(0, state.tokenPreMergerValue - state.tokenWorkingCapitalDebt);
-  const tiptonicEquity = state.tiptonicPreMergerValue;
+  const tiptonicEquity = Math.max(0, state.tiptonicPreMergerValue - state.tiptonicDebt);
   const postMergerValue = tokenEquity + tiptonicEquity + state.cashInvestment;
   
   elements.readonlyPostMergerValue.innerText = '$' + formatCurrency(postMergerValue);
@@ -854,7 +866,7 @@ function renderPreMergerTable(type) {
 function renderProforma() {
   // Merger Arithmetic
   const tokenEquity = Math.max(0, state.tokenPreMergerValue - state.tokenWorkingCapitalDebt);
-  const tiptonicEquity = state.tiptonicPreMergerValue;
+  const tiptonicEquity = Math.max(0, state.tiptonicPreMergerValue - state.tiptonicDebt);
   const postMoney = tokenEquity + tiptonicEquity + state.cashInvestment;
   
   const tokenShare = postMoney > 0 ? tokenEquity / postMoney : 0;

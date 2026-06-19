@@ -75,10 +75,18 @@
           </div>
           
           <div class="parameter-card">
-            <label for="input-token-debt" class="parameter-label">Token Working Capital Debt</label>
+            <label for="input-token-debt" class="parameter-label">Token Debt</label>
             <div class="parameter-input-wrapper">
               <span class="currency-symbol">$</span>
               <input type="text" id="input-token-debt" class="parameter-input" value="30,000">
+            </div>
+          </div>
+          
+          <div class="parameter-card">
+            <label for="input-tiptonic-debt" class="parameter-label">Tiptonic Debt</label>
+            <div class="parameter-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="text" id="input-tiptonic-debt" class="parameter-input" value="0">
             </div>
           </div>
           
@@ -161,8 +169,8 @@
               </div>
               
               <div class="toggle-container" role="radiogroup" aria-label="Vesting State Selection">
-                <button class="toggle-btn active" id="toggle-at-close" role="radio" aria-checked="true">At Close</button>
-                <button class="toggle-btn" id="toggle-fully-vested" role="radio" aria-checked="false">Fully Vested</button>
+                <button class="toggle-btn" id="toggle-at-close" role="radio" aria-checked="false">Outstanding</button>
+                <button class="toggle-btn active" id="toggle-fully-vested" role="radio" aria-checked="true">Fully Diluted</button>
               </div>
             </div>
             
