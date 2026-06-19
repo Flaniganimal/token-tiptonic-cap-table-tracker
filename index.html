@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Token × Tiptonic — Cap Table & Deal Tracker</title>
   <link rel="stylesheet" href="index.css">
+  <script>
+    /* Prevent flash: apply saved theme before paint */
+    (function() {
+      var t = localStorage.getItem('token_tiptonic_theme');
+      if (t === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -21,6 +32,13 @@
     </nav>
     
     <div class="header-actions">
+      <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <div class="theme-toggle-track">
+          <span class="sun">☀️</span>
+          <span class="moon">🌙</span>
+        </div>
+        <div class="theme-toggle-knob"></div>
+      </div>
       <button class="btn btn-primary" id="btn-save-version-header">Save Version</button>
     </div>
   </header>
@@ -261,6 +279,7 @@
     window.restoreVersion = restoreVersion;
     window.deleteVersion = deleteVersion;
     window.switchTab = switchTab;
+    window.toggleTheme = toggleTheme;
   </script>
 </body>
 </html>

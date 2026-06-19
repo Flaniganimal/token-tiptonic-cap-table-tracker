@@ -771,3 +771,24 @@ async function renderVersions() {
 
 // Run Initialisation on Page Load
 document.addEventListener('DOMContentLoaded', init);
+
+// Toggle Light / Dark Mode
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  let next = 'light';
+  
+  if (current === 'dark') {
+    html.removeAttribute('data-theme');
+    next = 'light';
+    showToast("Switched to Light Mode");
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    next = 'dark';
+    showToast("Switched to Dark Mode");
+  }
+  
+  try {
+    localStorage.setItem('token_tiptonic_theme', next);
+  } catch(e) {}
+}
