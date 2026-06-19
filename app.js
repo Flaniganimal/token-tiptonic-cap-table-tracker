@@ -65,10 +65,6 @@ const elements = {
   proformaTableBody: document.getElementById('proforma-table-body'),
   proformaTableTotal: document.getElementById('proforma-table-total'),
   
-  // Toggles
-  toggleAtClose: document.getElementById('toggle-at-close'),
-  toggleFullyVested: document.getElementById('toggle-fully-vested'),
-  
   // Shareholder Modal
   addShareholderModal: document.getElementById('add-shareholder-modal'),
   modalCloseAdd: document.getElementById('modal-close-add'),
@@ -204,10 +200,6 @@ function init() {
   elements.modalCancelAdd.addEventListener('click', closeAddShareholderModal);
   elements.formAddShareholder.addEventListener('submit', handleAddShareholderSubmit);
   
-  // Toggles
-  elements.toggleAtClose.addEventListener('click', () => setVestingState('close'));
-  elements.toggleFullyVested.addEventListener('click', () => setVestingState('vested'));
-  
   // Save Action
   elements.btnSaveVersionHeader.addEventListener('click', openSaveVersionModal);
   elements.modalCloseSave.addEventListener('click', closeSaveVersionModal);
@@ -268,15 +260,6 @@ function init() {
       renderVersions();
     }
   });
-
-  // Sync toggle buttons with loaded vesting state
-  if (state.vestingState === 'vested') {
-    elements.toggleAtClose.classList.remove('active');
-    elements.toggleFullyVested.classList.add('active');
-  } else {
-    elements.toggleAtClose.classList.add('active');
-    elements.toggleFullyVested.classList.remove('active');
-  }
 
   // Perform initial render
   render();
@@ -339,20 +322,6 @@ function setupNumericInput(inputEl, stateKey) {
 }
 
 // Update vesting toggle
-function setVestingState(vState) {
-  state.vestingState = vState;
-  persistStateLocal();
-  
-  if (vState === 'close') {
-    elements.toggleAtClose.classList.add('active');
-    elements.toggleFullyVested.classList.remove('active');
-  } else {
-    elements.toggleAtClose.classList.remove('active');
-    elements.toggleFullyVested.classList.add('active');
-  }
-  
-  render();
-}
 
 // Modal handling — Add Shareholder
 function openAddShareholderModal(targetTable) {
@@ -781,7 +750,7 @@ function restoreVersion(versionId) {
     elements.inputCashInvestment.value = formatCurrency(state.cashInvestment);
     elements.inputTokenDebt.value = formatCurrency(state.tokenWorkingCapitalDebt);
     
-    setVestingState(state.vestingState);
+    state.vestingState = 'vested';
     persistStateLocal();
     render();
     
@@ -949,6 +918,15 @@ function renderProforma() {
     name: cjHolder ? cjHolder.name : 'Christina & Jack',
     subtitle: 'Tiptonic Equity + Cash Investment',
     pct: cjTotalPct
+  });
+  
+  // 4. Earn-in Reserve: 0% in fully diluted (all allocated to Ben & Jay)
+  const earnInReservePct = 0.0;
+  totalProformaPct += earnInReservePct;
+  proformaRows.push({
+    name: 'Earn-in Reserve',
+    subtitle: '',
+    pct: earnInReservePct
   });
   
   // Sort all rows by percentage descending (largest first)
