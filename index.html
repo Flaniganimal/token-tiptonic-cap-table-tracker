@@ -32,8 +32,10 @@
     
     <div class="header-actions">
       <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Switch between light and dark mode">
-        <span class="theme-icon">☀️</span>
-        <span class="theme-label">Light</span>
+        <span class="theme-icon" id="theme-icon-container">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+        <span class="theme-label" id="theme-label">Dark Mode</span>
       </button>
       <button class="btn btn-primary" id="btn-save-version-header">Save Version</button>
     </div>

@@ -843,7 +843,9 @@ header {
 }
 
 .theme-icon {
-  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 
