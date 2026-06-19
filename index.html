@@ -109,7 +109,7 @@
                   <tr>
                     <th>Shareholder Name</th>
                     <th style="width: 120px;">Ownership %</th>
-                    <th style="width: 48px;"></th>
+                    <th style="width: 64px;"></th>
                   </tr>
                 </thead>
                 <tbody id="token-table-body">
@@ -135,7 +135,7 @@
                   <tr>
                     <th>Shareholder Name</th>
                     <th style="width: 120px;">Ownership %</th>
-                    <th style="width: 48px;"></th>
+                    <th style="width: 64px;"></th>
                   </tr>
                 </thead>
                 <tbody id="tiptonic-table-body">
@@ -265,6 +265,35 @@
     </div>
   </div>
 
+  <!-- MODAL: Edit Source -->
+  <div class="modal-overlay" id="edit-source-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-edit-source-title">Change Source</h3>
+        <button class="modal-close" id="modal-close-edit-source">&times;</button>
+      </div>
+      
+      <form id="form-edit-source">
+        <div class="form-group">
+          <label class="form-label">Shareholder</label>
+          <div class="form-value" id="edit-source-holder-name" style="font-weight: 600; font-size: 0.9rem; color: var(--text); padding: 6px 0;"></div>
+        </div>
+        
+        <div class="form-group">
+          <label for="select-edit-source" class="form-label">New Source (Dilution origin)</label>
+          <select id="select-edit-source" class="form-select">
+            <option value="prorata">All holders (pro rata)</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-edit-source">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -279,6 +308,7 @@
     window.deleteVersion = deleteVersion;
     window.switchTab = switchTab;
     window.toggleTheme = toggleTheme;
+    window.editShareholderSource = editShareholderSource;
   </script>
 </body>
 </html>

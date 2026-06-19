@@ -209,6 +209,20 @@ header {
   color: var(--red);
 }
 
+.btn-edit-link {
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+
+.btn-edit-link:hover {
+  color: var(--accent);
+}
+
 /* Views & Layouts */
 .view {
   display: none;
@@ -476,8 +490,9 @@ header {
 }
 
 .cell-actions {
-  width: 48px;
+  width: 64px;
   text-align: center;
+  white-space: nowrap;
 }
 
 /* Live footer status row */

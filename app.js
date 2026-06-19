@@ -92,12 +92,24 @@ const elements = {
   inputVersionLabel: document.getElementById('input-version-label'),
   errorVersionLabel: document.getElementById('error-version-label'),
   
+  // Edit Source Modal
+  editSourceModal: document.getElementById('edit-source-modal'),
+  modalCloseEditSource: document.getElementById('modal-close-edit-source'),
+  modalCancelEditSource: document.getElementById('modal-cancel-edit-source'),
+  formEditSource: document.getElementById('form-edit-source'),
+  editSourceHolderName: document.getElementById('edit-source-holder-name'),
+  editSourceTitle: document.getElementById('modal-edit-source-title'),
+  selectEditSource: document.getElementById('select-edit-source'),
+  
   // Toasts
   toastContainer: document.getElementById('toast-container')
 };
 
 // Target Table for Shareholder Modal ('token' or 'tiptonic')
 let activeModalTableTarget = 'token';
+
+// Active edit source target
+let activeEditSourceTarget = { tableType: 'token', holderId: null };
 
 // Formatting Helpers
 function formatCurrency(val) {
@@ -197,6 +209,11 @@ function init() {
   elements.modalCloseSave.addEventListener('click', closeSaveVersionModal);
   elements.modalCancelSave.addEventListener('click', closeSaveVersionModal);
   elements.formSaveVersion.addEventListener('submit', handleSaveVersionSubmit);
+  
+  // Edit Source Modal
+  elements.modalCloseEditSource.addEventListener('click', closeEditSourceModal);
+  elements.modalCancelEditSource.addEventListener('click', closeEditSourceModal);
+  elements.formEditSource.addEventListener('submit', handleEditSourceSubmit);
   
   // Load local state cache if exists (fallback to default)
   try {
@@ -505,6 +522,120 @@ function deleteShareholder(tableTarget, id) {
   }
 }
 
+// Edit Source Modal — Change dilution origin for a shareholder
+function editShareholderSource(tableType, holderId) {
+  const table = tableType === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const holder = table.find(h => h.id === holderId);
+  if (!holder) return;
+  
+  activeEditSourceTarget = { tableType, holderId };
+  
+  elements.editSourceTitle.innerText = `Change Source — ${tableType === 'token' ? 'Token' : 'Tiptonic'}`;
+  elements.editSourceHolderName.innerText = `${holder.name} (${holder.percentage.toFixed(1)}%)`;
+  
+  // Build source dropdown dynamically from OTHER holders in the same table
+  elements.selectEditSource.innerHTML = '<option value="prorata">All holders (pro rata)</option>';
+  table.forEach(h => {
+    if (h.id !== holderId) {
+      elements.selectEditSource.innerHTML += `<option value="${h.id}">Dilute ${h.name} only</option>`;
+    }
+  });
+  
+  elements.editSourceModal.classList.add('active');
+}
+
+function closeEditSourceModal() {
+  elements.editSourceModal.classList.remove('active');
+}
+
+function handleEditSourceSubmit(e) {
+  e.preventDefault();
+  
+  const { tableType, holderId } = activeEditSourceTarget;
+  const table = tableType === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
+  const undoStack = tableType === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
+  const holder = table.find(h => h.id === holderId);
+  if (!holder) return;
+  
+  const newSource = elements.selectEditSource.value;
+  const pct = holder.percentage;
+  
+  // Step 1: Restore the pre-add snapshot if one exists
+  const undoIndex = undoStack.findIndex(entry => entry.addedId === holderId);
+  
+  if (undoIndex !== -1) {
+    // Restore pre-add percentages for existing holders
+    const snapshot = undoStack[undoIndex].snapshot;
+    snapshot.forEach(snapHolder => {
+      const current = table.find(h => h.id === snapHolder.id);
+      if (current) {
+        current.percentage = snapHolder.percentage;
+      }
+    });
+    // Remove old undo entry
+    undoStack.splice(undoIndex, 1);
+  } else {
+    // No undo entry — redistribute the holder's percentage back to others first
+    const otherHolders = table.filter(h => h.id !== holderId);
+    const otherSum = otherHolders.reduce((s, h) => s + h.percentage, 0);
+    if (otherSum > 0) {
+      const scaleFactor = (otherSum + pct) / otherSum;
+      otherHolders.forEach(h => {
+        h.percentage = roundPct(h.percentage * scaleFactor);
+      });
+    }
+  }
+  
+  // Step 2: Snapshot the current state (after restoration, before re-dilution)
+  const newSnapshot = table.filter(h => h.id !== holderId).map(h => ({ id: h.id, name: h.name, percentage: h.percentage }));
+  
+  // Step 3: Re-apply dilution from the new source
+  if (newSource === 'prorata') {
+    const scaleFactor = (100 - pct) / 100;
+    table.forEach(h => {
+      if (h.id !== holderId) {
+        h.percentage = roundPct(h.percentage * scaleFactor);
+      }
+    });
+  } else {
+    const sourceHolder = table.find(h => h.id === newSource);
+    if (sourceHolder) {
+      if (sourceHolder.percentage < pct) {
+        showToast(`${sourceHolder.name} only has ${sourceHolder.percentage.toFixed(1)}%. Cannot dilute by ${pct.toFixed(1)}%.`, 'error');
+        closeEditSourceModal();
+        return;
+      }
+      sourceHolder.percentage = roundPct(sourceHolder.percentage - pct);
+    }
+  }
+  
+  // Set the holder's percentage (it stays the same)
+  holder.percentage = roundPct(pct);
+  
+  // Step 4: Fix rounding remainder
+  const currentSum = table.reduce((s, h) => s + h.percentage, 0);
+  const remainder = roundPct(100.0 - currentSum);
+  if (remainder !== 0) {
+    let largest = null;
+    table.forEach(h => {
+      if (h.id !== holderId && (largest === null || h.percentage > largest.percentage)) {
+        largest = h;
+      }
+    });
+    if (largest) {
+      largest.percentage = roundPct(largest.percentage + remainder);
+    }
+  }
+  
+  // Step 5: Push new undo snapshot
+  undoStack.push({ addedId: holderId, snapshot: newSnapshot });
+  
+  persistStateLocal();
+  closeEditSourceModal();
+  render();
+  showToast(`Source updated for "${holder.name}".`);
+}
+
 // Edit name directly on cell
 function updateShareholderName(tableTarget, id, name) {
   const table = tableTarget === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
@@ -674,6 +805,7 @@ function renderPreMergerTable(type) {
           onchange="updateShareholderPct('${type}', '${holder.id}', this.value)">
       </td>
       <td class="cell-actions">
+        <button class="btn-edit-link" onclick="editShareholderSource('${type}', '${holder.id}')" title="Change Source">✎</button>
         <button class="btn-danger-link" onclick="deleteShareholder('${type}', '${holder.id}')" title="Delete Shareholder">&times;</button>
       </td>
     `;
