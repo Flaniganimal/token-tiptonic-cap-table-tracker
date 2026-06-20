@@ -690,14 +690,48 @@ function updateShareholderPct(tableTarget, id, pctVal) {
   const table = tableTarget === 'token' ? state.tokenCapTable : state.tiptonicCapTable;
   const undoStack = tableTarget === 'token' ? state.tokenUndoStack : state.tiptonicUndoStack;
   const holder = table.find(h => h.id === id);
-  if (holder) {
-    const parsed = parseFloat(pctVal);
-    holder.percentage = isNaN(parsed) ? 0 : roundPct(parsed);
-    // Clear undo stack when user manually edits percentages, since snapshots are no longer valid
-    undoStack.length = 0;
-    persistStateLocal();
-    render();
+  if (!holder) return;
+
+  const parsed = parseFloat(pctVal);
+  const newPct = isNaN(parsed) ? 0 : roundPct(Math.max(0, Math.min(100, parsed)));
+  const delta = newPct - holder.percentage; // positive = holder grew, negative = holder shrank
+
+  if (delta === 0) return;
+
+  // Set the edited holder's new percentage
+  holder.percentage = newPct;
+
+  // Redistribute the delta across all OTHER holders pro rata
+  const others = table.filter(h => h.id !== id);
+  const othersTotal = others.reduce((s, h) => s + h.percentage, 0);
+
+  if (othersTotal > 0) {
+    others.forEach(h => {
+      const share = h.percentage / othersTotal;
+      h.percentage = roundPct(h.percentage - delta * share);
+      // Floor at zero — can't go negative
+      if (h.percentage < 0) h.percentage = 0;
+    });
   }
+
+  // Fix any rounding drift so total is exactly 100.0
+  const currentSum = table.reduce((s, h) => s + h.percentage, 0);
+  const remainder = roundPct(100.0 - currentSum);
+  if (remainder !== 0) {
+    // Absorb into the largest OTHER holder
+    let largest = null;
+    others.forEach(h => {
+      if (largest === null || h.percentage > largest.percentage) largest = h;
+    });
+    if (largest) {
+      largest.percentage = roundPct(largest.percentage + remainder);
+    }
+  }
+
+  // Clear undo stack when user manually edits percentages, since snapshots are no longer valid
+  undoStack.length = 0;
+  persistStateLocal();
+  render();
 }
 
 // Modal handling — Save Version
